@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Bodega - Control de Inventario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+    <nav class="bg-teal-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">📦 WMS - Control de Stock</h1>
+            <span class="bg-teal-700 px-3 py-1 rounded text-sm font-semibold">Examen Final DevOps</span>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6 max-w-6xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="bg-white p-6 rounded-lg shadow-md h-fit">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                    📥 Registrar Ingreso
+                </h2>
+                <form id="formProducto" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Código de Barras</label>
+                        <input type="text" id="codigo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                        <input type="text" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Cantidad (Stock)</label>
+                        <input type="number" id="stock" required min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Ubicación en Bodega (Slot)</label>
+                        <input type="text" id="ubicacion" placeholder="Ej: A-12" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-50 border focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <button type="submit" class="w-full bg-teal-600 text-white p-2.5 rounded-md font-semibold hover:bg-teal-700 transition shadow">
+                        Guardar en Inventario
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md md:col-span-2">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+                    📋 Stock Actual en Tiempo Real
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductos" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const API_URL = '/api/productos';
+
+        // Función para cargar y listar los productos
+        async function cargarProductos() {
+            try {
+                const res = await fetch(API_URL);
+                const productos = await res.json();
+                const tbody = document.getElementById('tablaProductos');
+                tbody.innerHTML = '';
+
+                productos.forEach(p => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.id}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">${p.codigo_barras}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${p.nombre}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full font-bold">${p.stock} uds</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-teal-600 font-bold font-mono">${p.ubicacion}</td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error al cargar inventario:', error);
+            }
+        }
+
+        // Evento para guardar un nuevo producto
+        document.getElementById('formProducto').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                codigo_barras: document.getElementById('codigo').value,
+                nombre: document.getElementById('nombre').value,
+                stock: parseInt(document.getElementById('stock').value),
+                ubicacion: document.getElementById('ubicacion').value
+            };
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    document.getElementById('formProducto').reset();
+                    cargarProductos(); // Refrescar tabla en vivo
+                }
+            } catch (error) {
+                console.error('Error al guardar producto:', error);
+            }
+        });
+
+        // Ejecutar carga inicial al abrir la página
+        cargarProductos();
+    </script>
+</body>
+</html>
