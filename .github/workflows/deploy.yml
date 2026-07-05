@@ -40,5 +40,5 @@ jobs:
 
     - name: Actualizar deployment en EKS
       run: |
-        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name eva3-eks
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name cluster-bodega-examen-final
         kubectl rollout restart deployment/tienda-backend -n tienda
